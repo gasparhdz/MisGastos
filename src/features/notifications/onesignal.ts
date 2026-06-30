@@ -9,7 +9,9 @@ export const isOneSignalConfigured = Boolean(ONESIGNAL_APP_ID);
 let initialized = false;
 let initPromise: Promise<boolean> | null = null;
 let lastInitError: string | null = null;
+let lastDashboardConfigError: string | null = null;
 let lastPermissionRequestResult: string | null = null;
+let lastActivationError: string | null = null;
 
 function logPush(message: string, data?: Record<string, unknown>) {
   if (data) {
@@ -58,6 +60,8 @@ export function getPushNotificationDebugState() {
     appIdConfigured: isOneSignalConfigured,
     initialized,
     initError: lastInitError,
+    dashboardConfigError: lastDashboardConfigError,
+    lastActivationError,
     lastPermissionRequestResult,
     browserNotificationPermission: getBrowserNotificationPermission(),
     windowOneSignalDefined: isWindowOneSignalDefined(),
@@ -190,6 +194,10 @@ export async function initOneSignal(): Promise<boolean> {
           return true;
         }
 
+        if (message.toLowerCase().includes("app not configured for web push")) {
+          lastDashboardConfigError = message;
+        }
+
         lastInitError = message;
         initPromise = null;
         console.error(LOG_PREFIX, "Error al inicializar OneSignal", error);
@@ -281,9 +289,25 @@ export async function activatePushNotifications(userId: string): Promise<PushNot
   try {
     await OneSignal.User.PushSubscription.optIn();
   } catch (error) {
+    lastActivationError = getActivationErrorMessage(error);
     console.error(LOG_PREFIX, "optIn falló", error);
     throw error;
   }
+
+  if (!OneSignal.User.PushSubscription.optedIn) {
+    lastActivationError = "optIn completó pero optedIn sigue en false";
+    logPushState("Suscripción incompleta");
+
+    if (lastDashboardConfigError || lastInitError) {
+      throw new Error(lastDashboardConfigError ?? lastInitError ?? lastActivationError);
+    }
+
+    throw new Error(
+      "No se pudo completar la suscripción push. Revisá la configuración Web en OneSignal.",
+    );
+  }
+
+  lastActivationError = null;
 
   logPush("Suscripción", {
     optedIn: OneSignal.User.PushSubscription.optedIn,
@@ -294,6 +318,23 @@ export async function activatePushNotifications(userId: string): Promise<PushNot
   const nextStatus = getPushNotificationStatus();
   logPushState(`Activación finalizada (${nextStatus})`);
   return nextStatus;
+}
+
+export function getWebPushSetupMessage() {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://tu-dominio.vercel.app";
+
+  return [
+    "OneSignal no tiene Web Push configurado para este dominio.",
+    "",
+    "En OneSignal Dashboard:",
+    "1. Settings → Push & In-App → Web",
+    "2. Integration type: Custom Code",
+    `3. Site URL: ${origin} (exacto, con https)`,
+    "4. Guardá y esperá unos minutos",
+    "5. Volvé a tocar Activar notificaciones",
+    "",
+    "El permiso del navegador ya está concedido. Falta la suscripción en OneSignal.",
+  ].join("\n");
 }
 
 export function getPermissionStillDefaultMessage() {
