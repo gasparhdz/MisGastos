@@ -116,8 +116,8 @@ async function sendOneSignalNotification(
       },
       target_channel: "push",
       headings: {
-        es: "Mis Gastos",
-        en: "Mis Gastos",
+        es: " ",
+        en: " ",
       },
       contents: {
         es: message,

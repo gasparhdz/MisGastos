@@ -10,82 +10,18 @@ let initialized = false;
 let initPromise: Promise<boolean> | null = null;
 let lastInitError: string | null = null;
 let lastDashboardConfigError: string | null = null;
-let lastPermissionRequestResult: string | null = null;
 let lastActivationError: string | null = null;
 
-function logPush(message: string, data?: Record<string, unknown>) {
-  if (data) {
-    console.info(LOG_PREFIX, message, data);
-    return;
-  }
-
-  console.info(LOG_PREFIX, message);
-}
-
-function getBrowserNotificationPermission() {
+export function getBrowserNotificationPermission() {
   if (typeof Notification === "undefined") {
-    return "unavailable";
+    return "unavailable" as const;
   }
 
   return Notification.permission;
 }
 
-function isWindowOneSignalDefined() {
-  return typeof window !== "undefined" && Boolean(window.OneSignal);
-}
-
-function isSdkScriptInjected() {
-  return typeof document !== "undefined" && Boolean(document.getElementById("onesignal-sdk"));
-}
-
-function isStandalonePwa() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone))
-  );
-}
-
 export function getInitError() {
   return lastInitError;
-}
-
-export function getPushNotificationDebugState() {
-  const pushSupported = OneSignal.Notifications.isPushSupported();
-
-  return {
-    appIdConfigured: isOneSignalConfigured,
-    initialized,
-    initError: lastInitError,
-    dashboardConfigError: lastDashboardConfigError,
-    lastActivationError,
-    lastPermissionRequestResult,
-    browserNotificationPermission: getBrowserNotificationPermission(),
-    windowOneSignalDefined: isWindowOneSignalDefined(),
-    sdkScriptInjected: isSdkScriptInjected(),
-    standalonePwa: isStandalonePwa(),
-    permissionNative: initialized
-      ? OneSignal.Notifications.permissionNative
-      : getBrowserNotificationPermission(),
-    permission: initialized ? OneSignal.Notifications.permission : null,
-    pushSupported,
-    optedIn: initialized ? OneSignal.User.PushSubscription.optedIn ?? null : null,
-    subscriptionId: initialized ? OneSignal.User.PushSubscription.id ?? null : null,
-    externalId: initialized ? OneSignal.User.externalId ?? null : null,
-    status: getPushNotificationStatus(),
-    origin: typeof window !== "undefined" ? window.location.origin : null,
-  };
-}
-
-function logPushState(context: string) {
-  logPush(context, getPushNotificationDebugState());
-}
-
-export function logPushBootstrap(message: string) {
-  logPush(message, getPushNotificationDebugState());
 }
 
 export function isOneSignalReady() {
@@ -102,60 +38,33 @@ export function getActivationErrorMessage(error: unknown) {
 
 export async function requestBrowserPushPermission(): Promise<NotificationPermission | "unavailable"> {
   if (typeof Notification === "undefined") {
-    lastPermissionRequestResult = "unavailable";
     throw new Error("Este navegador no expone la API Notification");
   }
 
-  const before = Notification.permission;
-  logPush("Notification.requestPermission() nativo", { before });
-
-  if (before === "granted") {
-    lastPermissionRequestResult = "granted (ya estaba concedido)";
-    return "granted";
+  if (Notification.permission !== "default") {
+    return Notification.permission;
   }
 
-  if (before === "denied") {
-    lastPermissionRequestResult = "denied (ya estaba bloqueado)";
-    return "denied";
-  }
-
-  const result = await Notification.requestPermission();
-  lastPermissionRequestResult = result;
-  logPush("Notification.requestPermission() resultado", {
-    result,
-    after: Notification.permission,
-  });
-
-  return result;
+  return Notification.requestPermission();
 }
 
 export async function initOneSignal(): Promise<boolean> {
-  logPush("initOneSignal() llamado", getPushNotificationDebugState());
-
   if (!ONESIGNAL_APP_ID) {
     lastInitError = "missing_app_id";
-    logPush("VITE_ONESIGNAL_APP_ID no está definida");
     return false;
   }
 
   if (initialized) {
-    logPushState("OneSignal ya estaba inicializado");
     return true;
   }
 
   if (!OneSignal.Notifications.isPushSupported()) {
     lastInitError = "browser_not_supported";
-    logPush("Este navegador no soporta Web Push — init omitido");
     return false;
   }
 
   if (!initPromise) {
     initPromise = (async () => {
-      logPush("Inyectando SDK e inicializando OneSignal…", {
-        appIdPrefix: `${ONESIGNAL_APP_ID.slice(0, 8)}…`,
-        origin: window.location.origin,
-      });
-
       try {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
@@ -181,8 +90,6 @@ export async function initOneSignal(): Promise<boolean> {
 
         initialized = true;
         lastInitError = null;
-        logPush("OneSignal inicializado correctamente");
-        logPushState("Estado después de init");
         return true;
       } catch (error) {
         const message = getActivationErrorMessage(error);
@@ -190,7 +97,6 @@ export async function initOneSignal(): Promise<boolean> {
         if (message.toLowerCase().includes("already initialized")) {
           initialized = true;
           lastInitError = null;
-          logPush("OneSignal ya estaba inicializado (react-onesignal)", getPushNotificationDebugState());
           return true;
         }
 
@@ -201,7 +107,6 @@ export async function initOneSignal(): Promise<boolean> {
         lastInitError = message;
         initPromise = null;
         console.error(LOG_PREFIX, "Error al inicializar OneSignal", error);
-        logPushState("Init fallido");
         return false;
       }
     })();
@@ -245,12 +150,10 @@ export function getPushNotificationStatus(): PushNotificationStatus {
 
 export async function loginOneSignalUser(userId: string) {
   if (!initialized) {
-    logPush("login omitido — OneSignal no inicializado");
     return;
   }
 
   await OneSignal.login(userId);
-  logPushState("Usuario asociado con external id");
 }
 
 export async function logoutOneSignalUser() {
@@ -259,19 +162,14 @@ export async function logoutOneSignalUser() {
   }
 
   await OneSignal.logout();
-  logPushState("Usuario desasociado");
 }
 
 export async function activatePushNotifications(userId: string): Promise<PushNotificationStatus> {
-  logPush("activatePushNotifications() iniciado", { userId });
-
   if (!initialized) {
     const ready = await initOneSignal();
 
     if (!ready) {
-      const message = lastInitError ?? "OneSignal no inicializó";
-      logPush("No se pudo activar", getPushNotificationDebugState());
-      throw new Error(message);
+      throw new Error(lastInitError ?? "OneSignal no inicializó");
     }
   }
 
@@ -280,7 +178,6 @@ export async function activatePushNotifications(userId: string): Promise<PushNot
   }
 
   if (getBrowserNotificationPermission() === "denied") {
-    logPushState("Permiso denegado");
     return "blocked";
   }
 
@@ -296,7 +193,6 @@ export async function activatePushNotifications(userId: string): Promise<PushNot
 
   if (!OneSignal.User.PushSubscription.optedIn) {
     lastActivationError = "optIn completó pero optedIn sigue en false";
-    logPushState("Suscripción incompleta");
 
     if (lastDashboardConfigError || lastInitError) {
       throw new Error(lastDashboardConfigError ?? lastInitError ?? lastActivationError);
@@ -308,16 +204,7 @@ export async function activatePushNotifications(userId: string): Promise<PushNot
   }
 
   lastActivationError = null;
-
-  logPush("Suscripción", {
-    optedIn: OneSignal.User.PushSubscription.optedIn,
-    subscriptionId: OneSignal.User.PushSubscription.id,
-    externalId: OneSignal.User.externalId,
-  });
-
-  const nextStatus = getPushNotificationStatus();
-  logPushState(`Activación finalizada (${nextStatus})`);
-  return nextStatus;
+  return getPushNotificationStatus();
 }
 
 export function getWebPushSetupMessage() {

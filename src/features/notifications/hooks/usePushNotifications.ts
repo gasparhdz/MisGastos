@@ -3,9 +3,9 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   activatePushNotifications,
   getActivationErrorMessage,
+  getBrowserNotificationPermission,
   getInitError,
   getPermissionStillDefaultMessage,
-  getPushNotificationDebugState,
   getPushNotificationStatus,
   getWebPushSetupMessage,
   initOneSignal,
@@ -31,7 +31,6 @@ export function usePushNotifications() {
   const refreshStatus = useCallback(() => {
     const nextStatus = getPushNotificationStatus();
     setStatus(nextStatus);
-    console.info(LOG_PREFIX, "Estado actualizado", getPushNotificationDebugState());
     return nextStatus;
   }, []);
 
@@ -136,11 +135,10 @@ export function usePushNotifications() {
       refreshStatus();
 
       const nextStatus = await activatePushNotifications(authUserId);
-      const debug = getPushNotificationDebugState();
       refreshStatus();
 
       if (nextStatus === "pending") {
-        if (debug.browserNotificationPermission === "granted") {
+        if (getBrowserNotificationPermission() === "granted") {
           window.alert(getWebPushSetupMessage());
         } else {
           window.alert(getPermissionStillDefaultMessage());
