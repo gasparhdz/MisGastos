@@ -35,6 +35,10 @@ function isSdkScriptInjected() {
   return typeof document !== "undefined" && Boolean(document.getElementById("onesignal-sdk"));
 }
 
+export function getInitError() {
+  return lastInitError;
+}
+
 export function getPushNotificationDebugState() {
   const pushSupported = OneSignal.Notifications.isPushSupported();
 
@@ -69,7 +73,7 @@ export function isOneSignalReady() {
   return initialized;
 }
 
-function getInitErrorMessage(error: unknown) {
+export function getActivationErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
   }
@@ -132,7 +136,7 @@ export async function initOneSignal(): Promise<boolean> {
         logPushState("Estado después de init");
         return true;
       } catch (error) {
-        const message = getInitErrorMessage(error);
+        const message = getActivationErrorMessage(error);
 
         if (message.toLowerCase().includes("already initialized")) {
           initialized = true;
@@ -197,39 +201,32 @@ export async function logoutOneSignalUser() {
 }
 
 export async function activatePushNotifications(userId: string): Promise<PushNotificationStatus> {
-  logPush("Activando notificaciones…", { userId });
+  logPush("activatePushNotifications() iniciado", { userId });
 
   const ready = await initOneSignal();
 
   if (!ready) {
-    logPush("No se pudo activar: OneSignal no inicializó", getPushNotificationDebugState());
-    return getPushNotificationStatus();
+    const message = lastInitError ?? "OneSignal no inicializó";
+    logPush("No se pudo activar", getPushNotificationDebugState());
+    throw new Error(message);
   }
 
   if (!OneSignal.Notifications.isPushSupported()) {
-    logPushState("Push no soportado en este navegador");
-    return "unsupported";
+    throw new Error("Este navegador no soporta notificaciones push");
   }
-
-  await OneSignal.login(userId);
-  await OneSignal.Notifications.requestPermission();
-
-  logPush("Permiso nativo", {
-    permissionNative: OneSignal.Notifications.permissionNative,
-    permission: OneSignal.Notifications.permission,
-    browserNotificationPermission: getBrowserNotificationPermission(),
-  });
 
   if (OneSignal.Notifications.permissionNative === "denied") {
     logPushState("Permiso denegado");
     return "blocked";
   }
 
+  await OneSignal.login(userId);
   await OneSignal.User.PushSubscription.optIn();
 
   logPush("Suscripción", {
     optedIn: OneSignal.User.PushSubscription.optedIn,
     subscriptionId: OneSignal.User.PushSubscription.id,
+    externalId: OneSignal.User.externalId,
   });
 
   const nextStatus = getPushNotificationStatus();

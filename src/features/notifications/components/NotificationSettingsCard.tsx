@@ -72,7 +72,7 @@ function DebugValue({ label, value }: { label: string; value: unknown }) {
 }
 
 export function NotificationSettingsCard() {
-  const { activate, debug, isConfigured, loading, status } = usePushNotifications();
+  const { debug, handleActivateClick, isConfigured, loading, status } = usePushNotifications();
 
   useEffect(() => {
     logPushBootstrap("NotificationSettingsCard renderizada en HomePage");
@@ -117,9 +117,12 @@ export function NotificationSettingsCard() {
 
           {showActivateButton ? (
             <Button
+              type="button"
               className="w-full gap-2 sm:w-auto"
               disabled={loading}
-              onClick={() => void activate()}
+              onClick={() => {
+                void handleActivateClick();
+              }}
               size="sm"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

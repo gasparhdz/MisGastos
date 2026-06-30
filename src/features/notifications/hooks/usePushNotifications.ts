@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   activatePushNotifications,
+  getActivationErrorMessage,
+  getInitError,
   getPushNotificationDebugState,
   getPushNotificationStatus,
   initOneSignal,
@@ -16,7 +18,7 @@ import type { PushNotificationStatus } from "@/features/notifications/types";
 const LOG_PREFIX = "[MisGastos:Push]";
 
 export function usePushNotifications() {
-  const { userId } = useAuth();
+  const { user, userId } = useAuth();
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<PushNotificationStatus>(
@@ -94,26 +96,49 @@ export function usePushNotifications() {
     };
   }, [ready, refreshStatus]);
 
-  const activate = useCallback(async () => {
-    if (!userId) {
-      console.info(LOG_PREFIX, "No hay userId — no se puede activar");
+  const handleActivateClick = useCallback(async () => {
+    console.info("[MisGastos:Push] Click activar notificaciones");
+
+    const authUserId = user?.id ?? userId;
+
+    if (!authUserId) {
+      const message = "No hay usuario autenticado. Volvé a iniciar sesión.";
+      console.error(LOG_PREFIX, message);
+      window.alert(message);
       return;
     }
 
     setLoading(true);
 
     try {
-      const nextStatus = await activatePushNotifications(userId);
+      const ready = await initOneSignal();
+
+      if (!ready) {
+        throw new Error(getInitError() ?? "OneSignal no inicializó");
+      }
+
+      console.info(LOG_PREFIX, "requestPermission() directo en handler de click");
+      await OneSignal.Notifications.requestPermission();
+
+      console.info(LOG_PREFIX, "Permiso después de requestPermission()", getPushNotificationDebugState());
+
+      const nextStatus = await activatePushNotifications(authUserId);
       setStatus(nextStatus);
       setDebug(getPushNotificationDebugState());
+      console.info(LOG_PREFIX, "Activación completada", getPushNotificationDebugState());
+    } catch (error) {
+      const message = getActivationErrorMessage(error);
+      console.error(LOG_PREFIX, "Error al activar notificaciones", error);
+      window.alert(`No se pudieron activar las notificaciones: ${message}`);
+      refreshStatus();
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [refreshStatus, user?.id, userId]);
 
   return {
-    activate,
     debug,
+    handleActivateClick,
     isConfigured: isOneSignalConfigured,
     loading,
     ready,
