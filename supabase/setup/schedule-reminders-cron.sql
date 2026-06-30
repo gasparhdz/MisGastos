@@ -1,21 +1,22 @@
 -- Configuración de cron para recordatorios push (09:00 y 16:00, hora Argentina).
 --
--- Ejecutar UNA VEZ en Supabase Dashboard → SQL Editor, después de:
--- 1. Deploy de la Edge Function send-due-reminders
--- 2. Configurar secrets en Dashboard → Edge Functions → Secrets:
---    - ONESIGNAL_APP_ID
---    - ONESIGNAL_REST_API_KEY
---    - CRON_SECRET (generá un valor aleatorio largo)
--- 3. Reemplazar TU_CRON_SECRET de abajo
+-- ANTES de ejecutar este script:
+-- 1. Supabase Dashboard → Database → Extensions
+-- 2. Habilitar pg_cron
+-- 3. Habilitar pg_net
+-- 4. Deploy de send-due-reminders + secrets en Edge Functions
+-- 5. Reemplazar TU_CRON_SECRET abajo (mismo valor que CRON_SECRET)
+--
+-- Supabase pg_cron usa UTC. Argentina (ART) = UTC-3:
+--   09:00 ART → 12:00 UTC  → 0 12 * * *
+--   16:00 ART → 19:00 UTC  → 0 19 * * *
+--
+-- Si vault.create_secret falla por duplicado, comentá las líneas 18-19.
 
-create extension if not exists pg_cron with schema pg_catalog;
-create extension if not exists pg_net with schema extensions;
-
--- Guardá secretos en Vault (reemplazá TU_CRON_SECRET)
 select vault.create_secret('https://auwyruvwonvbtkgwngul.supabase.co', 'misgastos_project_url');
 select vault.create_secret('TU_CRON_SECRET', 'misgastos_cron_secret');
 
--- Mañana: 09:00 America/Argentina/Buenos_Aires
+-- Mañana: 09:00 ART (12:00 UTC)
 do $$
 begin
   if exists (select 1 from cron.job where jobname = 'misgastos-send-due-reminders-morning') then
@@ -25,7 +26,7 @@ end $$;
 
 select cron.schedule(
   'misgastos-send-due-reminders-morning',
-  '0 9 * * *',
+  '0 12 * * *',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'misgastos_project_url')
@@ -36,11 +37,10 @@ select cron.schedule(
     ),
     body := '{"slot":"morning"}'::jsonb
   ) as request_id;
-  $$,
-  'America/Argentina/Buenos_Aires'
+  $$
 );
 
--- Tarde: 16:00 America/Argentina/Buenos_Aires
+-- Tarde: 16:00 ART (19:00 UTC)
 do $$
 begin
   if exists (select 1 from cron.job where jobname = 'misgastos-send-due-reminders-afternoon') then
@@ -50,7 +50,7 @@ end $$;
 
 select cron.schedule(
   'misgastos-send-due-reminders-afternoon',
-  '0 16 * * *',
+  '0 19 * * *',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'misgastos_project_url')
@@ -61,6 +61,5 @@ select cron.schedule(
     ),
     body := '{"slot":"afternoon"}'::jsonb
   ) as request_id;
-  $$,
-  'America/Argentina/Buenos_Aires'
+  $$
 );

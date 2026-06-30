@@ -64,7 +64,12 @@ Sin CLI: subí `supabase/functions/send-due-reminders/index.ts` desde el Dashboa
 
 ### 4. Cron
 
-Editá `supabase/setup/schedule-reminders-cron.sql` reemplazando `TU_CRON_SECRET` y ejecutalo en **SQL Editor**.
+1. **Database → Extensions** → habilitar `pg_cron` y `pg_net`
+2. Editá `supabase/setup/schedule-reminders-cron.sql` reemplazando `TU_CRON_SECRET` y ejecutalo en **SQL Editor**.
+
+**Nota:** Supabase `pg_cron` corre en **UTC**. Los horarios del script equivalen a:
+- `0 12 * * *` → 09:00 Argentina
+- `0 19 * * *` → 16:00 Argentina
 
 Verificá jobs:
 
