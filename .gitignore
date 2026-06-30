@@ -32,3 +32,6 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Local scripts (machine-specific)
+*.bat
