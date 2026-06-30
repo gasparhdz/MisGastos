@@ -7,7 +7,9 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "generate-icons": "node scripts/generate-pwa-icons.mjs"
+    "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "push:test-morning": "node scripts/send-due-reminders-test.mjs morning",
+    "push:test-afternoon": "node scripts/send-due-reminders-test.mjs afternoon"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

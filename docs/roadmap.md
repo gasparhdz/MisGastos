@@ -6,7 +6,7 @@ Este documento sirve para registrar posibles mejoras, no como compromiso de desa
 
 ## Corto plazo
 
-- [ ] Recordatorio de vencimientos próximos
+- [x] Recordatorio de vencimientos próximos (09:00 y 16:00 vía Edge Function)
 - [ ] Indicador visual más claro de pagos vencidos
 - [ ] Atajos de teclado en desktop
 

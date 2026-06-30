@@ -106,10 +106,11 @@ Las notificaciones push en iOS **solo funcionan si la PWA está instalada en la 
 
 ### Notificaciones push (OneSignal)
 
-La integración con OneSignal permite suscribir el dispositivo para futuros avisos de vencimientos. El envío programado (09:00 y 16:00) se implementará en una etapa posterior.
+La integración con OneSignal permite suscribir el dispositivo para avisos de vencimientos.
 
 - El service worker de OneSignal vive en `/push/onesignal/` para no interferir con el service worker de la PWA (`vite-plugin-pwa`).
 - Al activar notificaciones, el usuario de Supabase se asocia en OneSignal mediante `external user id` (`OneSignal.login(userId)`).
+- El envío programado (09:00 y 16:00, hora Argentina) corre en Supabase Edge Functions + `pg_cron`. Ver [docs/notificaciones-push.md](docs/notificaciones-push.md).
 
 ### Colores del manifest
 
@@ -138,6 +139,7 @@ HTTPS es obligatorio para que la PWA sea instalable en dispositivos móviles.
 |-----------|-----------|
 | [docs/vision.md](docs/vision.md) | Filosofía y propósito del proyecto |
 | [docs/roadmap.md](docs/roadmap.md) | Ideas futuras (sin implementar) |
+| [docs/notificaciones-push.md](docs/notificaciones-push.md) | Recordatorios automáticos 09:00 / 16:00 |
 | [docs/decisions.md](docs/decisions.md) | Decisiones técnicas registradas |
 | [docs/contributing.md](docs/contributing.md) | Guía para desarrolladores y asistentes de IA |
 
