@@ -4,14 +4,17 @@ import {
   activatePushNotifications,
   getActivationErrorMessage,
   getInitError,
+  getPermissionStillDefaultMessage,
   getPushNotificationDebugState,
   getPushNotificationStatus,
   initOneSignal,
   isOneSignalConfigured,
+  isOneSignalReady,
   logPushBootstrap,
   loginOneSignalUser,
   logoutOneSignalUser,
   OneSignal,
+  requestBrowserPushPermission,
 } from "@/features/notifications/onesignal";
 import type { PushNotificationStatus } from "@/features/notifications/types";
 
@@ -111,21 +114,46 @@ export function usePushNotifications() {
     setLoading(true);
 
     try {
-      const ready = await initOneSignal();
+      if (!isOneSignalReady()) {
+        const initializedOk = await initOneSignal();
 
-      if (!ready) {
-        throw new Error(getInitError() ?? "OneSignal no inicializó");
+        if (!initializedOk) {
+          throw new Error(getInitError() ?? "OneSignal no inicializó");
+        }
       }
 
-      console.info(LOG_PREFIX, "requestPermission() directo en handler de click");
-      await OneSignal.Notifications.requestPermission();
+      const nativePermission = await requestBrowserPushPermission();
+      console.info(LOG_PREFIX, "Permiso nativo tras click", getPushNotificationDebugState());
 
-      console.info(LOG_PREFIX, "Permiso después de requestPermission()", getPushNotificationDebugState());
+      if (nativePermission === "denied") {
+        refreshStatus();
+        window.alert("Las notificaciones están bloqueadas. Habilitalas en la configuración del navegador.");
+        return;
+      }
+
+      if (nativePermission === "default") {
+        refreshStatus();
+        window.alert(getPermissionStillDefaultMessage());
+        return;
+      }
+
+      console.info(LOG_PREFIX, "OneSignal.Notifications.requestPermission() tras permiso nativo");
+      try {
+        await OneSignal.Notifications.requestPermission();
+      } catch (onesignalPermissionError) {
+        console.error(LOG_PREFIX, "OneSignal requestPermission falló (continuando)", onesignalPermissionError);
+      }
+
+      console.info(LOG_PREFIX, "Estado antes de activatePushNotifications", getPushNotificationDebugState());
 
       const nextStatus = await activatePushNotifications(authUserId);
       setStatus(nextStatus);
       setDebug(getPushNotificationDebugState());
       console.info(LOG_PREFIX, "Activación completada", getPushNotificationDebugState());
+
+      if (nextStatus === "pending") {
+        window.alert(getPermissionStillDefaultMessage());
+      }
     } catch (error) {
       const message = getActivationErrorMessage(error);
       console.error(LOG_PREFIX, "Error al activar notificaciones", error);

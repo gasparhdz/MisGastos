@@ -113,6 +113,9 @@ export function NotificationSettingsCard() {
               {copy.label}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">{copy.description}</p>
+            {debug.initError ? (
+              <p className="mt-2 text-xs font-medium text-destructive">initError: {debug.initError}</p>
+            ) : null}
           </div>
 
           {showActivateButton ? (
@@ -146,6 +149,9 @@ export function NotificationSettingsCard() {
               <DebugValue label="subscriptionId" value={debug.subscriptionId} />
               <DebugValue label="externalId" value={debug.externalId} />
               <DebugValue label="status" value={debug.status} />
+              <DebugValue label="origin" value={debug.origin} />
+              <DebugValue label="standalonePwa" value={debug.standalonePwa} />
+              <DebugValue label="lastPermissionRequestResult" value={debug.lastPermissionRequestResult} />
               <DebugValue label="sdkScriptInjected" value={debug.sdkScriptInjected} />
               <DebugValue label="window.OneSignal" value={debug.windowOneSignalDefined} />
               {debug.initError ? <DebugValue label="initError" value={debug.initError} /> : null}
