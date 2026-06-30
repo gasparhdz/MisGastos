@@ -7,7 +7,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      includeAssets: ["favicon.png", "icons/apple-touch-icon.png", "icons/icon.svg"],
+      includeAssets: [
+        "favicon.png",
+        "icons/apple-touch-icon.png",
+        "icons/icon.svg",
+        "push/onesignal/OneSignalSDKWorker.js",
+      ],
       manifest: {
         name: "Mis Gastos",
         short_name: "Mis Gastos",

@@ -27,6 +27,7 @@ Si una funcionalidad no ayuda con eso, probablemente no pertenece a esta aplicac
 | Datos remotos | TanStack Query |
 | Backend | Supabase (Auth + Postgres, sin servidor Node propio) |
 | PWA | `vite-plugin-pwa` |
+| Notificaciones push | OneSignal Web SDK |
 | Deploy | Vercel |
 
 ## Instalación
@@ -48,9 +49,12 @@ cp .env.example .env.local
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu_clave_anon_publica
+VITE_ONESIGNAL_APP_ID=tu_onesignal_app_id
 ```
 
-Las variables se obtienen en **Supabase Dashboard → Project Settings → API**.
+Las variables de Supabase se obtienen en **Supabase Dashboard → Project Settings → API**.
+
+El App ID de OneSignal está en **OneSignal Dashboard → Settings → Keys & IDs**.
 
 > Nunca subas `.env`, `.env.local` ni claves reales al repositorio.
 
@@ -85,16 +89,27 @@ npm run generate-icons
 
 ### Instalar en iPhone
 
+Las notificaciones push en iOS **solo funcionan si la PWA está instalada en la pantalla de inicio** y se abre desde ese ícono (no desde Safari normal).
+
 1. Abrí la app en **Safari**.
 2. Tocá **Compartir** (cuadrado con flecha hacia arriba).
 3. Elegí **Agregar a pantalla de inicio**.
 4. Confirmá el nombre **Mis Gastos** y tocá **Agregar**.
+5. Abrí la app desde el ícono en la pantalla de inicio.
+6. En la app, tocá **Activar notificaciones** y aceptá el permiso.
 
 ### Instalar en Android
 
 1. Abrí la app en **Chrome**.
 2. Tocá el menú (⋮) o el banner de instalación.
 3. Elegí **Instalar aplicación** o **Agregar a pantalla de inicio**.
+
+### Notificaciones push (OneSignal)
+
+La integración con OneSignal permite suscribir el dispositivo para futuros avisos de vencimientos. El envío programado (09:00 y 16:00) se implementará en una etapa posterior.
+
+- El service worker de OneSignal vive en `/push/onesignal/` para no interferir con el service worker de la PWA (`vite-plugin-pwa`).
+- Al activar notificaciones, el usuario de Supabase se asocia en OneSignal mediante `external user id` (`OneSignal.login(userId)`).
 
 ### Colores del manifest
 
@@ -112,6 +127,7 @@ npm run generate-icons
 3. Agregá las variables de entorno:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_ONESIGNAL_APP_ID`
 4. Deploy. Cada push a `main` genera un deploy automático.
 
 HTTPS es obligatorio para que la PWA sea instalable en dispositivos móviles.

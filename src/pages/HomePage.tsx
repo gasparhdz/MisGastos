@@ -32,6 +32,7 @@ import {
   type MonthSelection,
 } from "@/features/month/utils";
 import { SummaryCard } from "@/features/summary/components/SummaryCard";
+import { NotificationSettingsCard } from "@/features/notifications/components/NotificationSettingsCard";
 import { formatCurrencyArs, formatSignedCurrencyArs } from "@/utils/currency";
 
 export function HomePage() {
@@ -218,7 +219,8 @@ export function HomePage() {
         </>
       ) : null}
 
-      <div className="border-t pt-5">
+      <div className="border-t pt-5 space-y-4">
+        <NotificationSettingsCard />
         <Button className="w-full gap-2" variant="outline" onClick={() => void signOut()}>
           <LogOut className="h-4 w-4" />
           Cerrar sesión
