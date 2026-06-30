@@ -1,16 +1,18 @@
 # Roadmap
 
-Mejoras futuras posibles. Nada de esto está implementado aún.
+Ideas futuras. **Nada de esto está implementado.**
+
+Este documento sirve para registrar posibles mejoras, no como compromiso de desarrollo.
 
 ## Corto plazo
 
-- [ ] Notificación o recordatorio de vencimientos próximos
+- [ ] Recordatorio de vencimientos próximos
 - [ ] Indicador visual más claro de pagos vencidos
 - [ ] Atajos de teclado en desktop
 
 ## Mediano plazo
 
-- [ ] Modo offline con sincronización al reconectar (más allá del cache de assets PWA)
+- [ ] Sincronización offline de datos (más allá del cache de assets PWA)
 - [ ] Exportar resumen del mes (texto o PDF simple)
 - [ ] Soporte para más monedas si hiciera falta
 
@@ -19,9 +21,11 @@ Mejoras futuras posibles. Nada de esto está implementado aún.
 - [ ] Widget de pantalla de inicio (si la plataforma lo permite)
 - [ ] Compartir resumen mensual con otra persona
 
-## Explícitamente fuera de alcance
+## Fuera de alcance
 
-- Presupuestos, categorías, gráficos financieros
+Estas ideas no pertenecen a Mis Gastos:
+
+- Presupuestos, categorías y gráficos financieros
 - Conexión con bancos o tarjetas
 - Multi-usuario o cuentas compartidas
 - Contabilidad o reportes impositivos

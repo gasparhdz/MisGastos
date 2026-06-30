@@ -1,19 +1,33 @@
 # Mis Gastos
 
-Nota mensual para organizar qué tenés que pagar, qué te tienen que pagar, cuándo vencen las cosas y cuánto dinero necesitás para afrontar el mes.
+## Descripción
 
-No es una app de finanzas personales: reemplaza una nota mensual que hacés todos los meses.
+Mis Gastos es una nota mensual digital para organizar pagos y cobros pendientes del mes. Reemplaza la planilla o nota que se arma todos los meses para saber qué hay que pagar, qué hay que cobrar y cuánto dinero hace falta.
+
+**No es un gestor financiero.** No reemplaza apps de finanzas personales, presupuestos ni contabilidad.
+
+## Objetivo
+
+Abrir la app y en menos de 10 segundos responder:
+
+- ¿Cuánto tengo que pagar?
+- ¿Qué vence primero?
+- ¿Qué ya pagué?
+- ¿Cuánto me tienen que pagar?
+
+Si una funcionalidad no ayuda con eso, probablemente no pertenece a esta aplicación.
 
 ## Stack
 
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS + shadcn/ui
-- React Hook Form + Zod
-- TanStack Query
-- Supabase (Auth + Postgres)
-- PWA con `vite-plugin-pwa`
-- Deploy en Vercel
+| Capa | Tecnología |
+|------|------------|
+| UI | React 18, TypeScript, Tailwind CSS, shadcn/ui |
+| Build | Vite |
+| Formularios | React Hook Form + Zod |
+| Datos remotos | TanStack Query |
+| Backend | Supabase (Auth + Postgres, sin servidor Node propio) |
+| PWA | `vite-plugin-pwa` |
+| Deploy | Vercel |
 
 ## Instalación
 
@@ -55,9 +69,11 @@ npm run build
 npm run preview
 ```
 
+`npm run build` ejecuta verificación de TypeScript y genera el bundle de producción en `dist/`, incluyendo el manifest y el service worker de la PWA.
+
 ## PWA
 
-La app es instalable en iPhone y Android como Progressive Web App.
+La app es instalable en iPhone y Android como Progressive Web App (`display: standalone`).
 
 ### Iconos
 
@@ -87,11 +103,13 @@ npm run generate-icons
 | `theme_color` | `#0F766E` |
 | `background_color` | `#FAF9F6` |
 
-## Deploy (Vercel)
+## Deploy
+
+### Vercel
 
 1. Conectá el repositorio en [vercel.com](https://vercel.com).
 2. Framework preset: **Vite**.
-3. Agregá las variables de entorno en el dashboard de Vercel:
+3. Agregá las variables de entorno:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
 4. Deploy. Cada push a `main` genera un deploy automático.
@@ -100,9 +118,12 @@ HTTPS es obligatorio para que la PWA sea instalable en dispositivos móviles.
 
 ## Documentación
 
-- [Visión del proyecto](docs/vision.md)
-- [Roadmap](docs/roadmap.md)
-- [Decisiones técnicas](docs/decisions.md)
+| Documento | Contenido |
+|-----------|-----------|
+| [docs/vision.md](docs/vision.md) | Filosofía y propósito del proyecto |
+| [docs/roadmap.md](docs/roadmap.md) | Ideas futuras (sin implementar) |
+| [docs/decisions.md](docs/decisions.md) | Decisiones técnicas registradas |
+| [docs/contributing.md](docs/contributing.md) | Guía para desarrolladores y asistentes de IA |
 
 ## Scripts
 
@@ -110,5 +131,5 @@ HTTPS es obligatorio para que la PWA sea instalable en dispositivos móviles.
 |---------|-------------|
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Build de producción |
-| `npm run preview` | Preview del build |
+| `npm run preview` | Preview del build local |
 | `npm run generate-icons` | Genera iconos PWA desde el SVG |
